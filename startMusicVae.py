@@ -39,6 +39,8 @@ valBSize = 1
 lr = 1e-3
 wDecay = 0.9999
 modelLoadNum = 1
+# 논문에서 언급된 익스포넨셜 하게 beta 값 0에서 0.2로 바꾸는 코드는 시간상 구현 x
+# 고정된 beta 값 사용
 beta = 0.2
 
 
