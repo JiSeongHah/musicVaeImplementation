@@ -1,5 +1,7 @@
 import os
 
+
+# baseDir 내의 모든 mid 파일 탐색
 def getAllMidiFles(baseDir):
 
     lst = []

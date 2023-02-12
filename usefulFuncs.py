@@ -1,5 +1,7 @@
 import os
 
+
+# 폴더 이름 생성 위한 코드
 def mk_name(*args,**name_value_dict):
     total_name = ''
     additional_arg = ''
@@ -16,6 +18,8 @@ def mk_name(*args,**name_value_dict):
 
     return total_name
 
+
+# 디렉토리 생성 코드
 def createDir(directory):
     try:
         if not os.path.exists(directory):

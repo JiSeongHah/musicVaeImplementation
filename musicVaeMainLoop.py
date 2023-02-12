@@ -147,6 +147,7 @@ class musicVaeMainloop(nn.Module):
 
         self.optimizer.zero_grad()
         for eachInput in tqdm(trainLoader):
+
             self.optimizer.zero_grad()
 
             bInput = eachInput['Input']
@@ -198,7 +199,7 @@ class musicVaeMainloop(nn.Module):
             # print(f'final output is on device : {finalOut.device}')
             mu = mu.cpu()
             logVar = logVar.cpu()
-            loss = betaElboLoss(pred=finalOut,
+            loss = self.calLoss(pred=finalOut,
                                 label=bOutput.float(),
                                 pMu=mu,
                                 logVar=logVar,
@@ -207,6 +208,7 @@ class musicVaeMainloop(nn.Module):
             loss.backward()
             self.optimizer.step()
             self.trnLossLst.append(loss.item())
+
 
         self.model.to('cpu')
         self.model.eval()
@@ -225,6 +227,8 @@ class musicVaeMainloop(nn.Module):
         self.trainingStep()
         self.trainingStepEnd()
 
+
+    # training step과 유사하므로 따로 주석 달지 않음
     def validationStep(self):
 
 
@@ -286,7 +290,7 @@ class musicVaeMainloop(nn.Module):
             # print(f'final output is on device : {finalOut.device}')
             mu = mu.cpu()
             logVar = logVar.cpu()
-            loss = betaElboLoss(pred=finalOut,
+            loss = self.calLoss(pred=finalOut,
                                 label=bOutput.float(),
                                 pMu=mu,
                                 logVar=logVar,
@@ -317,13 +321,16 @@ class musicVaeMainloop(nn.Module):
         self.doTrain()
         self.doVal()
 
+    # fake Z를 이용해 새로운 데이터 생성
     def genNew(self,genBSize):
 
         self.model.to(self.device)
         self.model.eval()
 
+        # fake Z
         genZ = torch.randn(genBSize,self.totalStep,self.conHiddenSize,device=self.device)
 
+        # 입력 위한 초기 h0 c0
         h0 = torch.zeros(2 * self.encLayerNum,
                          genBSize,
                          self.encHiddenSize,
@@ -335,10 +342,10 @@ class musicVaeMainloop(nn.Module):
                          device=self.device)
 
 
-
+        # 결과 담기 위한 제로 텐서
         generated = torch.zeros(genBSize,self.totalStep,self.finalSize,device=self.device)
 
-
+        # 결과
         generated = self.model.genNew(genZ=genZ,
                                       h0=h0,
                                       c0=c0,
@@ -348,7 +355,8 @@ class musicVaeMainloop(nn.Module):
         self.model.to('cpu')
         return generated.cpu()
 
-
+    # 두 validaiton 데이터를 인코더에 넣어 z로 변환 후 mean 하여 데이터 생성
+    # 논문에서 언급된 interpolation 구현 위한 코드
     def genInterpol(self):
 
         self.model.to(self.device)
@@ -357,6 +365,8 @@ class musicVaeMainloop(nn.Module):
         trainLoader = DataLoader(self.valDataset, batch_size=7, shuffle=False)
 
         self.optimizer.zero_grad()
+
+        # loop를 한 번만 돌아 두개 데이터 z 뽑아 냄
         for eachInput in tqdm(trainLoader):
             bInput = eachInput['Input']
             bOutput = eachInput['Output']
@@ -386,6 +396,8 @@ class musicVaeMainloop(nn.Module):
 
             break
 
+        # 두개 데이터 z를 평균 하여 새로운 fake z 생성
+        # 논문에서 언급된 interpolation 구현 위한 코드
         genA,genB= torch.chunk(z,2,dim=-1)
         print(genA.size(),genB.size())
         genZ = genA+genB
@@ -395,7 +407,7 @@ class musicVaeMainloop(nn.Module):
 
 
         # genZ = torch.randn(genBSize,self.totalStep,self.conHiddenSize,device=self.device)
-
+        # 입력 위한 초기 h0 c0
         h0 = torch.zeros(2 * self.encLayerNum,
                          genBSize,
                          self.encHiddenSize,
@@ -407,10 +419,10 @@ class musicVaeMainloop(nn.Module):
                          device=self.device)
 
 
-
+        # 결과 담기 위한 제로 텐서
         generated = torch.zeros(genBSize,self.totalStep,self.finalSize,device=self.device)
 
-
+        # 결과
         generated = self.model.genNew(genZ=genZ,
                                       h0=h0,
                                       c0=c0,
